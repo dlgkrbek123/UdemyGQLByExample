@@ -1,0 +1,49 @@
+--------------------------------------------------------
+
+> yarn add @apollo/server graphql
+
+expressMiddleware로 Apollo Server를 
+express의 일부로 삽입
+
+--------------------------------------------------------
+
+미들웨어는 중간에 흐름을 가로채서 입출력을 변조가능
+여러개 사용가능
+
+요청/응답 <=> Auth <=> JSON <=> handler
+
+--------------------------------------------------------
+
+=> 아폴로서버를 실행시키고 미들웨어로 /graphql일때 동작하게 설정
+
+const apolloServer = new ApolloServer({
+  typeDefs,
+  resolvers,
+});
+await apolloServer.start();
+
+app.use('/graphql', apolloMiddleware(apolloServer));
+app.listen({ port: PORT }, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+--------------------------------------------------------
+
+.graphql 파일은 SDL파일
+
+아래와 같은 방식으로 Custom Ojbect Type을 정의
+
+type Job {
+  id: ID!
+  title: String
+  description: String
+}
+
+--------------------------------------------------------
+
+Graphql은 5개의 Scalar타입을 지원
+  Int, Float, String, Boolean, ID
+
+커스텀 스칼라 타입도 추가가능
+
+--------------------------------------------------------
