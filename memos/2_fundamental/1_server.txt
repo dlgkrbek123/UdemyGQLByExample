@@ -1,0 +1,47 @@
+--------------------------------------------------------
+
+SDL (Schema Definition Language)
+=> GraphQL schema를 정의하는 언어
+=> Query타입은 질의되고 요청될수있는 필드를 포함
+
+const typeDefs = `
+  type Query {
+    greeting: String
+  }
+`;
+
+--------------------------------------------------------
+
+schema는 인터페이스의 형태만 묘사
+resolver는 질의되었을때의 액션을 구현하는 함수
+
+--------------------------------------------------------
+
+apollo-server로 http로 API를 제공
+
+> yarn add @apollo/server graphql
+
+
+apollo-server로 접속시 페이지에서 
+스키마 확인과 질의 가능
+
+query, mutation, subscription은 operation type
+응답은 JSON객체로 data, errors등의 프로퍼티를 포함
+
+
+!! package.json의 모듈을 설정 !!
+=> import등의 문법을 사용가능
+
+--------------------------------------------------------
+
+요청은 아래와 방식으로 호출
+
+[POST] {domain}/
+  content-type: application/json
+  payload 확인시 JSON객체를 보냄
+
+--------------------------------------------------------
+
+!! graphql syntax highlighting extension 좋음 !!
+
+--------------------------------------------------------
