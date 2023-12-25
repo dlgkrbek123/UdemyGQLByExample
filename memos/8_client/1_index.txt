@@ -1,0 +1,87 @@
+--------------------------------------------------------
+
+지금까지 graphql-request를 클라이언트에서 사용
+경량화 되서 좋지만 기능이 부실
+=> request하면 매번 호출
+
+--------------------------------------------------------
+
+apollo-client를 쓰면 캐싱과 별도 기능이 더 추가됨
+단순히 페이지 전환시의 데이터 캐싱뿐 아니라
+뮤테이션 후의 페이지 전환시의 데이터 재호출도 방지 가능
+
+로딩, 에러 상태도 추적해준다.
+
+로컬 글로벌 상태도 관리 가능
+
+--------------------------------------------------------
+
+> yarn add @apollo/client
+
+--------------------------------------------------------
+
+import { ApolloClient, InMemoryCache, gql } from '@apollo/client';
+
+const client = new GraphQLClient('http://localhost:9000/graphql', {
+  headers: () => {
+    const accessToken = getAccessToken();
+
+    if (accessToken) {
+      return { Authorization: `Bearer ${accessToken}` };
+    }
+
+    return {};
+  },
+});
+
+--------------------------------------------------------
+
+// query는 Document
+const result = await apolloClient.query({ query });
+const result = await apolloClient.query({ query, variables: { id } });
+const result = await apolloClient.query({
+  query,
+  variables: { id },
+});
+
+--------------------------------------------------------
+
+// mutation
+const result = await apolloClient.mutate({
+  mutation,
+  variables: { input: { title, description } },
+});
+
+--------------------------------------------------------
+
+auth를 특정 요청에만 설정가능
+전체설정으로 모든 요청마다 설정되게 조정
+Apollo Link라는 개념의 미들웨어 설정이 가능 => concat으로 체이닝
+
+import {
+  ApolloClient,
+  ApolloLink,
+  InMemoryCache,
+  concat,
+  createHttpLink,
+} from '@apollo/client';
+import { getAccessToken } from '../auth';
+
+const authLink = new ApolloLink((operation, forward) => {
+  const accessToken = getAccessToken();
+  if (accessToken) {
+    operation.setContext({
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  }
+
+  return forward(operation);
+});
+const httpLink = createHttpLink({ uri: 'http://localhost:9000/graphql' });
+
+export const apolloClient = new ApolloClient({
+  link: concat(authLink, httpLink),
+  cache: new InMemoryCache(),
+});
+
+--------------------------------------------------------

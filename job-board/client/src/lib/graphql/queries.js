@@ -1,21 +1,9 @@
-import { GraphQLClient, gql } from 'graphql-request';
-import { getAccessToken } from '../auth';
-
-const client = new GraphQLClient('http://localhost:9000/graphql', {
-  headers: () => {
-    const accessToken = getAccessToken();
-
-    if (accessToken) {
-      return { Authorization: `Bearer ${accessToken}` };
-    }
-
-    return {};
-  },
-});
+import { gql } from '@apollo/client';
+import { apolloClient } from './apollo';
 
 export async function getJobs() {
   const query = gql`
-    query Job {
+    query Jobs {
       jobs {
         id
         date
@@ -27,12 +15,12 @@ export async function getJobs() {
       }
     }
   `;
-  const { jobs } = await client.request(query);
+  const result = await apolloClient.query({ query });
 
-  return jobs;
+  return result.data.jobs;
 }
 
-export async function getJob(jobId) {
+export async function getJob(id) {
   const query = gql`
     query JobById($id: ID!) {
       job(id: $id) {
@@ -47,11 +35,9 @@ export async function getJob(jobId) {
       }
     }
   `;
-  const { job } = await client.request(query, {
-    id: jobId,
-  });
+  const result = await apolloClient.query({ query, variables: { id } });
 
-  return job;
+  return result.data.job;
 }
 
 export async function getCompany(id) {
@@ -69,7 +55,12 @@ export async function getCompany(id) {
       }
     }
   `;
-  const { company } = await client.request(query, { id });
+  const result = await apolloClient.query({
+    query,
+    variables: {
+      id,
+    },
+  });
 
-  return company;
+  return result.data.company;
 }

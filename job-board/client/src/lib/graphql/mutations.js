@@ -1,17 +1,5 @@
-import { GraphQLClient, gql } from 'graphql-request';
-import { getAccessToken } from '../auth';
-
-const client = new GraphQLClient('http://localhost:9000/graphql', {
-  headers: () => {
-    const accessToken = getAccessToken();
-
-    if (accessToken) {
-      return { Authorization: `Bearer ${accessToken}` };
-    }
-
-    return {};
-  },
-});
+import { gql } from '@apollo/client';
+import { apolloClient } from './apollo';
 
 export async function createJob({ title, description }) {
   const mutation = gql`
@@ -21,12 +9,10 @@ export async function createJob({ title, description }) {
       }
     }
   `;
-  const { job } = await client.request(mutation, {
-    input: {
-      title,
-      description,
-    },
+  const result = await apolloClient.mutate({
+    mutation,
+    variables: { input: { title, description } },
   });
 
-  return job;
+  return result.data.job;
 }
