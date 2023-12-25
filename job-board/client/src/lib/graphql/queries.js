@@ -1,6 +1,19 @@
 import { gql } from '@apollo/client';
 import { apolloClient } from './apollo';
 
+export const jobDetailFragment = gql`
+  fragment JobDetail on Job {
+    id
+    date
+    title
+    description
+    company {
+      id
+      name
+    }
+  }
+`;
+
 export async function getJobs() {
   const query = gql`
     query Jobs {
@@ -15,23 +28,21 @@ export async function getJobs() {
       }
     }
   `;
-  const result = await apolloClient.query({ query });
+  const result = await apolloClient.query({
+    query,
+    fetchPolicy: 'network-only',
+  });
 
   return result.data.jobs;
 }
 
 export async function getJob(id) {
   const query = gql`
+    ${jobDetailFragment}
+
     query JobById($id: ID!) {
       job(id: $id) {
-        id
-        date
-        title
-        description
-        company {
-          id
-          name
-        }
+        ...JobDetail
       }
     }
   `;

@@ -1,0 +1,98 @@
+--------------------------------------------------------
+
+ApolloClient는 쿼리 결과를 메모리 캐싱 (RootQuery)
+또한 개별 객체를 캐싱하며 [__typename]:[ID]로 식별된다
+=> 모든 객체는 __typename 프로퍼티를 가짐
+
+
+=> 캐싱된 객체내부에 __ref 프로퍼티가 있음 (포인터 같은 것)
+=> 요청된 필드만 캐싱되어 있다
+
+--------------------------------------------------------
+
+캐싱이 호출횟수를 줄여주지만 완전히 우리가 원하는대로 동작하진 않는다
+=> create mutation 이후 추가한 사항이 안보임
+
+fetchPolicy를 설정해서 캐싱을 제어
+
+1. cache-first (기본) 
+=> 캐시에 있으면 해당값을 사용, 없으면 서버호출  
+
+2. cache-and-network
+=> 클라이언트/서버 양쪽에 호출
+=> 캐시가 있다면 일단 해당 값을 반환, 서버응답오면 한번 더 반환
+=> 캐시의 데이터를 보여주어 빠른 화면 응답 제공
+
+3. cache-only   
+=> 클라이언트가 캐시를 향해서만 쿼리를 실행, 서버 호출 x
+=> 값이없으면 에러
+
+
+4. network-only 
+=> 무조건 서버 호출, 결과는 캐시에 업데이트
+
+5. no-cache     
+=> network-only랑 동일하나 캐시 업데이트 X
+
+--------------------------------------------------------
+
+// 개별 쿼리에 설정
+const result = await apolloClient.query({
+  query,
+  fetchPolicy: 'network-only',
+});
+
+// 전체 쿼리에 설정
+export const apolloClient = new ApolloClient({
+  link: concat(authLink, httpLink),
+  cache: new InMemoryCache(),
+  defaultOptions: {
+    query: {
+      fetchPolicy: 'network-only',
+    },
+    // watchQuery: {}
+  },
+});
+
+--------------------------------------------------------
+
+mutation이후 이동되는 페이지에서 다시 호출하지 않게하기
+1. 모든 필드를 뮤테이션에서 리턴
+2. mutate의 update 옵션
+
+const result = await apolloClient.mutate({
+  mutation,
+  variables: { input: { title, description } },
+  update: (cache, result) => {
+    cache.writeQuery({
+      query: {!!gql 객체!!},
+      variables: { id: result.data.job.id },
+      data: result.data,
+    });
+  },
+});
+
+--------------------------------------------------------
+
+fragments
+=> SDL과 연관
+=> 쿼리의 필드를 재사용 가능하게 함
+
+fragment JobDetail on Job {
+  id
+  date
+  title
+  description
+  company {
+    id
+    name
+  }
+}
+
+query JobById($id: ID!) {
+  job(id: $id) {
+    ...JobDetail
+  }
+}
+
+--------------------------------------------------------
