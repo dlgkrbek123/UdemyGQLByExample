@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createJob } from '../lib/graphql/mutations';
+import { createJob } from '../lib/graphql/mutations.js';
 
 function CreateJobPage() {
   const [title, setTitle] = useState('');

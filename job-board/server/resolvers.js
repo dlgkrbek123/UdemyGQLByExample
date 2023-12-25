@@ -32,25 +32,34 @@ export const resolvers = {
   },
 
   Mutation: {
-    createJob: async (_, { input: { title, description } }) => {
+    createJob: async (_, { input: { title, description } }, { user }) => {
+      if (!user) throw unauthorizedError('Missing Authentication');
+
       const newJob = await createJob({
-        companyId: 'FjcJCHJALA4i',
+        companyId: user.companyId,
         title,
         description,
       });
 
       return newJob;
     },
-    deleteJob: async (_, { id }) => {
-      const deletedJob = await deleteJob(id);
+    deleteJob: async (_, { id }, { user }) => {
+      if (!user) throw unauthorizedError('Missing Authentication');
+      const deletedJob = await deleteJob(id, user.companyId);
+      if (!deleteJob) throw notFoundError('No Company found with id ' + id);
+
       return deletedJob;
     },
-    updateJob: async (_, { input: { id, title, description } }) => {
+    updateJob: async (_, { input: { id, title, description } }, { user }) => {
+      if (!user) throw unauthorizedError('Missing Authentication');
+
       const updatedJob = await updateJob({
         id,
         title,
         description,
+        companyId: user.companyId,
       });
+      if (!updatedJob) throw notFoundError('No Company found with id ' + id);
 
       return updatedJob;
     },
@@ -72,5 +81,11 @@ const toIsoDate = (value) => {
 const notFoundError = (message) => {
   return new GraphQLError(message, {
     extensions: { code: 'NOT_FOUND' },
+  });
+};
+
+const unauthorizedError = (message) => {
+  return new GraphQLError(message, {
+    extensions: { code: 'UNAUTHORIZED' },
   });
 };
