@@ -1,0 +1,42 @@
+--------------------------------------------------------
+
+ApolloClient는 React를 위해 hooks를 제공
+=> App을 ApolloProvider로 래핑
+
+<ApolloProvider client={apolloClient}></ApolloProvider>
+
+--------------------------------------------------------
+
+useQuery
+=> 라이프사이클을 따라 GQL Query를 호출
+=> loading, error등의 상태도 추적
+
+const { companyId } = useParams();
+const { data, loading, error } = useQuery(CompanyByIdQuery, {
+  variables: { id: companyId },
+});
+
+--------------------------------------------------------
+
+useMutation
+=> mutation은 명령식으로 호출해야함
+=> 두번째 응답값인 result으로 호출상태를 참조가능
+
+const [mutate, { loading, error }] =useMutation(createJobMutation)
+
+const handleSubmit = async (event) => {
+  event.preventDefault();
+
+  const result = await createJob({
+    variables: { input: { title, description } },
+    update: (cache, result) => {
+      cache.writeQuery({
+        query: JobByIdQuery,
+        variables: { id: result.data.job.id },
+        data: result.data,
+      });
+    },
+  });
+  navigate(`/jobs/${result.data.job.id}`);
+};
+--------------------------------------------------------
