@@ -1,0 +1,141 @@
+--------------------------------------------------------
+
+쿼리는 존재하는 데이터를 읽는 작업
+뮤테이션은 데이터를 조작하는 작업
+
+alice@facegle.io
+alice123
+
+--------------------------------------------------------
+
+// 스키마에 추가
+type Mutation {
+  createJob(title: String!, description: String): Job
+}
+
+// resolver에 추가
+Mutation: {
+  createJob: async (_, { title, description }) => {
+    const newJob = await createJob({
+      companyId: 'FjcJCHJALA4i',
+      title,
+      description,
+    });
+
+    return newJob;
+  },
+},
+
+// 호출
+mutation createJob($title: String!, $description: String){
+  createJob(title: $title, description: $description) {
+    id
+    date
+    title
+    description
+    company {
+      id
+      name
+    }
+  }
+}
+
+--------------------------------------------------------
+
+title, description같은 일일히 쿼리에 적는게 어렵다.
+특히 mutation arguments 개수가 많아지면 더 쉽지 않다.
+
+// 스키마에 input type 추가 및 수정
+input CreateJobInput {
+  title: String!
+  description: String
+}
+
+type Mutation {
+  createJob(input: CreateJobInput): Job
+}
+
+// 리졸버 Mutation 입력 한번더 디스트럭쳐링
+Mutation: {
+  createJob: async (_, { input: { title, description } }) => {
+    const newJob = await createJob({
+      companyId: 'FjcJCHJALA4i',
+      title,
+      description,
+    });
+
+    return newJob;
+  },
+},
+
+// 호출시에도 변동
+mutation createJob($input: CreateJobInput){
+  createJob(input: $input) {
+    id
+    date
+    title
+    description
+    company {
+      id
+      name
+    }
+  }
+}
+
+// variables
+{
+  "input": {
+      "title": "barista",
+      "description": null
+  }
+}
+
+--------------------------------------------------------
+
+// 리턴값을 job으로 리네임 가능
+const mutation = gql`
+  mutation createJob($input: CreateJobInput) {
+    job: createJob(input: $input) {
+      id
+    }
+  }
+`;
+
+--------------------------------------------------------
+
+mutation DeleteJob($id: ID!){
+  job:deleteJob(id: $id) {
+    id
+    date
+    title
+    description
+    company {
+      id
+      name
+    }
+  }
+}
+
+{
+  "id": "6qAiStlwsP1C"
+}
+
+--------------------------------------------------------
+
+mutation UpdateJob($input: UpdateJobInput!){
+  job:updateJob(input: $input) {
+    id
+    title
+    description
+  }
+}
+
+{
+  "input": {
+      "id": "QK1bLm3trEXs",
+       "title": "용접사",
+       "description": "포항항"
+  }
+}
+
+--------------------------------------------------------

@@ -1,4 +1,11 @@
-import { getJob, getJobs, getJobsByCompany } from './db/jobs.js';
+import {
+  createJob,
+  deleteJob,
+  getJob,
+  getJobs,
+  getJobsByCompany,
+  updateJob,
+} from './db/jobs.js';
 import { getCompany } from './db/companies.js';
 import { GraphQLError } from 'graphql';
 
@@ -24,11 +31,35 @@ export const resolvers = {
     },
   },
 
+  Mutation: {
+    createJob: async (_, { input: { title, description } }) => {
+      const newJob = await createJob({
+        companyId: 'FjcJCHJALA4i',
+        title,
+        description,
+      });
+
+      return newJob;
+    },
+    deleteJob: async (_, { id }) => {
+      const deletedJob = await deleteJob(id);
+      return deletedJob;
+    },
+    updateJob: async (_, { input: { id, title, description } }) => {
+      const updatedJob = await updateJob({
+        id,
+        title,
+        description,
+      });
+
+      return updatedJob;
+    },
+  },
+
   Job: {
     date: (job) => toIsoDate(job.createdAt),
     company: (job) => getCompany(job.companyId),
   },
-
   Company: {
     jobs: (company) => getJobsByCompany(company.id),
   },
