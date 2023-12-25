@@ -26,13 +26,15 @@ export const useJob = (id) => {
   };
 };
 
-export const useJobs = () => {
+export const useJobs = (limit, offset) => {
   const { data, loading, error } = useQuery(JobsQuery, {
+    variables: { limit, offset },
     fetchPolicy: 'network-only',
   });
 
   return {
-    jobs: data?.jobs,
+    jobs: data?.jobs?.items,
+    totalCount: data?.jobs?.totalCount,
     loading,
     error: Boolean(error),
   };

@@ -1,4 +1,5 @@
 import {
+  countJobs,
   createJob,
   deleteJob,
   getJob,
@@ -19,7 +20,15 @@ export const resolvers = {
 
       return job;
     },
-    jobs: () => getJobs(),
+    jobs: async (_, { limit, offset }) => {
+      const items = await getJobs(limit, offset);
+      const totalCount = await countJobs();
+
+      return {
+        items,
+        totalCount,
+      };
+    },
 
     company: async (_, { id }) => {
       const company = await getCompany(id);

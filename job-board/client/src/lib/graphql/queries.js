@@ -29,15 +29,18 @@ export const CompanyByIdQuery = gql`
 `;
 
 export const JobsQuery = gql`
-  query Jobs {
-    jobs {
-      id
-      date
-      title
-      company {
+  query Jobs($limit: Int, $offset: Int) {
+    jobs(limit: $limit, offset: $offset) {
+      items {
         id
-        name
+        date
+        title
+        company {
+          id
+          name
+        }
       }
+      totalCount
     }
   }
 `;
