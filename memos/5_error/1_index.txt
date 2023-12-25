@@ -1,6 +1,22 @@
-import { getJob, getJobs, getJobsByCompany } from './db/jobs.js';
-import { getCompany } from './db/companies.js';
-import { GraphQLError } from 'graphql';
+--------------------------------------------------------
+
+Graphql서버는 쿼리문 자체의 에러에 errors를 내려주거나 non-nullable
+일 경우에도 자체적인 에러를 내려줌
+
+두개이상의 필드를 루트에서 호출하여 한곳에서만 에러발생시 성공한 
+필드는 내려준다
+
+--------------------------------------------------------
+
+커스텀에러를 서버에서 만들 수 있음
+
+import { GraphQLError } from "graphql"
+
+throw new GraphQLError(message, {
+  extensions: { code: "ERROR_CODE", myCustomExtensions }
+})
+
+--------------------------------------------------------
 
 export const resolvers = {
   Query: {
@@ -34,12 +50,12 @@ export const resolvers = {
   },
 };
 
-const toIsoDate = (value) => {
-  return value.slice(0, 'yyyy-mm-dd'.length);
-};
+--------------------------------------------------------
 
 const notFoundError = (message) => {
   return new GraphQLError(message, {
     extensions: { code: 'NOT_FOUND' },
   });
 };
+
+--------------------------------------------------------
