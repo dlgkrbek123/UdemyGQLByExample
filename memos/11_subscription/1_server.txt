@@ -1,0 +1,109 @@
+--------------------------------------------------------
+
+이벤트 발생시 모든 유저에게 알림 
+=> subscription은 http 이외의 웹소켓 프로토콜이 필요 
+=> 양방향 상호작용 통신 세션
+
+--------------------------------------------------------
+
+1. subscripton 스키마 구축
+
+type Subscription {
+  messageAdded: Message!
+}
+
+--------------------------------------------------------
+
+2. 서버 설정
+> yarn add graphql-ws ws @graphql-tools/schema
+
+// 라이브러리 추가
+import { createServer as createHttpServer } from "node:http";
+import { WebSocketServer } from "ws";
+import { useServer as useWsServer } from "graphql-ws/lib/use/ws";
+import { makeExecutableSchema } from "@graphql-tools/schema";
+
+
+// typeDefs와 resolvers를 이용해서 schema를 생성
+// 기존의 아폴로서버에 넘겨줄수 있다.
+const schema = makeExecutableSchema({ typeDefs, resolvers });
+const apolloServer = new ApolloServer({ schema });
+
+
+// 기존의 express서버를 httpServer로 바꾸고
+// 해당서버에 웹소켓서버를 추가
+// 아폴로서버 설정과 스키마를 공유
+const httpServer = createHttpServer(app);
+const wsServer = new WebSocketServer({ server: httpServer, path: "/graphql" });
+
+useWsServer({ schema }, wsServer);
+
+--------------------------------------------------------
+
+서브스크립션 리졸버 정의
+=> query, mutation은 단일 값만 리턴 
+  => 따라서 함수로서 정의
+=> 하지만 서브스크립션은 여러번 값을 리턴
+  => 객체로 정의
+  => subscribe라는 프로퍼티를 가짐, async generatior
+=> Pubsub을 사용하는데 인메모리 솔루션이라 상용 권장 X
+
+
+> yarn add graphql-subscriptions
+
+import { GraphQLError } from "graphql";
+import { createMessage, getMessages } from "./db/messages.js";
+import { PubSub } from "graphql-subscriptions";
+
+const pubSub = new PubSub();
+
+export const resolvers = {
+  Query: {
+    messages: (_root, _args, { user }) => {
+      if (!user) throw unauthorizedError();
+      return getMessages();
+    },
+  },
+
+  Mutation: {
+    addMessage: async (_root, { text }, { user }) => {
+      if (!user) throw unauthorizedError();
+
+      const message = createMessage(user, text);
+      pubSub.publish("MESSAGE_ADDED", { messageAdded: message });
+      // 클라이언트로 메시지 전송
+
+      return message;
+    },
+  },
+
+  // 서브스크립션 리졸버 추가
+  Subscription: {
+    messageAdded: {
+      subscribe: () => pubSub.asyncIterator("MESSAGE_ADDED"),
+    },
+  },
+};
+
+function unauthorizedError() {
+  return new GraphQLError("Not authenticated", {
+    extensions: { code: "UNAUTHORIZED" },
+  });
+}
+
+--------------------------------------------------------
+
+2. 문서작성 및 호출
+
+문서 작성
+=> query, mutation과 차이없음
+=> opeartion type만 subscription
+
+
+subscription {
+  messageAdded {
+    id
+    user
+    text
+  }
+}

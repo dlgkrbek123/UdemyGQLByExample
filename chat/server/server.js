@@ -5,6 +5,10 @@ import express from "express";
 import { readFile } from "node:fs/promises";
 import { authMiddleware, handleLogin } from "./auth.js";
 import { resolvers } from "./resolvers.js";
+import { createServer as createHttpServer } from "node:http";
+import { WebSocketServer } from "ws";
+import { useServer as useWsServer } from "graphql-ws/lib/use/ws";
+import { makeExecutableSchema } from "@graphql-tools/schema";
 
 const PORT = 9000;
 const app = express();
@@ -17,7 +21,8 @@ const getContext = ({ req }) => {
 };
 
 const typeDefs = await readFile("./schema.graphql", "utf8");
-const apolloServer = new ApolloServer({ typeDefs, resolvers });
+const schema = makeExecutableSchema({ typeDefs, resolvers });
+const apolloServer = new ApolloServer({ schema });
 await apolloServer.start();
 app.use(
   "/graphql",
@@ -27,7 +32,12 @@ app.use(
   })
 );
 
-app.listen({ port: PORT }, () => {
+const httpServer = createHttpServer(app);
+const wsServer = new WebSocketServer({ server: httpServer, path: "/graphql" });
+
+useWsServer({ schema }, wsServer);
+
+httpServer.listen({ port: PORT }, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`GraphQL endpoint: http://localhost:${PORT}/graphql`);
 });
