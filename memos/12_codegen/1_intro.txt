@@ -1,0 +1,41 @@
+--------------------------------------------------------
+
+ts는 js에 정적인 타입체킹을 추가
+
+GraphQL Code Generator라는 도구가 있음
+=> 스키마로부터 ts definition을 생성
+
+--------------------------------------------------------
+
+ts프로젝트 복사
+
+=> package.json의 devDependencies에 typescript 관련 모듈이 추가
+=> tsx로 되어있음
+
+--------------------------------------------------------
+
+서버에서 스키마로부터 Type정의를 만들어보자
+
+> yarn add @graphql-codegen/cli @graphql-codegen/typescript @graphql-codegen/typescript-resolvers --dev
+
+> npx graphql-codegen init
+=> 여러가지 설정을 선택하여 cdoegen.json 생성 및 script추가
+
+Resolvers라는 타입이 생성됨
+서버 개발시 수정시마다 codegen 실행하기 빡셈 
+=> watch mode 쓰자
+=> 아니면 concurrently써서 nodemon이랑 codegen 실행
+
+--------------------------------------------------------
+
+클라이언트
+
+> npm install -D @graphql-codegen/cli @graphql-codegen/client-preset
+> npx graphql-codegen init
+
+1. React선택
+2. 서버의 스키마 위치
+3. gql문서정의한 파일
+4. 아웃풋
+
+--------------------------------------------------------
