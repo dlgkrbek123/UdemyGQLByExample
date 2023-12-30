@@ -5,12 +5,12 @@ import {
   createHttpLink,
   InMemoryCache,
   split,
-} from "@apollo/client";
-import { GraphQLWsLink } from "@apollo/client/link/subscriptions";
-import { createClient as createWsClient } from "graphql-ws";
-import { getAccessToken } from "../auth";
-import { getMainDefinition } from "@apollo/client/utilities";
-import { Kind, OperationTypeNode } from "graphql";
+} from '@apollo/client';
+import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
+import { createClient as createWsClient } from 'graphql-ws';
+import { getAccessToken } from '../auth';
+import { getMainDefinition } from '@apollo/client/utilities';
+import { Kind, OperationTypeNode } from 'graphql';
 
 const authLink = new ApolloLink((operation, forward) => {
   const accessToken = getAccessToken();
@@ -24,7 +24,14 @@ const authLink = new ApolloLink((operation, forward) => {
 
 const httpLink = concat(
   authLink,
-  createHttpLink({ uri: "http://localhost:9000/graphql" })
+  createHttpLink({ uri: 'http://localhost:9000/graphql' })
+);
+
+const wsLink = new GraphQLWsLink(
+  createWsClient({
+    url: 'ws://localhost:9000/graphql',
+    connectionParams: () => ({ accessToken: getAccessToken() }),
+  })
 );
 
 const isSubscription = (operation) => {
@@ -35,12 +42,6 @@ const isSubscription = (operation) => {
     definition.operation === OperationTypeNode.SUBSCRIPTION
   );
 };
-
-const wsLink = new GraphQLWsLink(
-  createWsClient({
-    url: "ws://localhost:9000/graphql",
-  })
-);
 
 export const apolloClient = new ApolloClient({
   link: split(isSubscription, wsLink, httpLink),

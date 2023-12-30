@@ -4,6 +4,8 @@
 => subscription은 http 이외의 웹소켓 프로토콜이 필요 
 => 양방향 상호작용 통신 세션
 
+> yarn add graphql-ws ws @graphql-tools/schema graphql-subscriptions
+
 --------------------------------------------------------
 
 1. subscripton 스키마 구축
@@ -15,9 +17,7 @@ type Subscription {
 --------------------------------------------------------
 
 2. 서버 설정
-> yarn add graphql-ws ws @graphql-tools/schema
 
-// 라이브러리 추가
 import { createServer as createHttpServer } from "node:http";
 import { WebSocketServer } from "ws";
 import { useServer as useWsServer } from "graphql-ws/lib/use/ws";
@@ -36,24 +36,41 @@ const apolloServer = new ApolloServer({ schema });
 const httpServer = createHttpServer(app);
 const wsServer = new WebSocketServer({ server: httpServer, path: "/graphql" });
 
-useWsServer({ schema }, wsServer);
+useWsServer(
+  {
+    schema,
+    context: ({ connectionParams }) => {
+      // auth 콘텍스트 설정
+      const accessToken = connectionParams.accessToken;
+      if (accessToken) {
+        const payload = decodeToken(accessToken);
+
+        return {
+          user: payload.sub,
+        };
+      }
+
+      return {};
+    },
+  },
+  wsServer
+);
 
 --------------------------------------------------------
 
 서브스크립션 리졸버 정의
-=> query, mutation은 단일 값만 리턴 
-  => 따라서 함수로서 정의
+=> query, mutation은 단일 값만 리턴 => 따라서 함수로서 정의
 => 하지만 서브스크립션은 여러번 값을 리턴
   => 객체로 정의
   => subscribe라는 프로퍼티를 가짐, async generatior
 => Pubsub을 사용하는데 인메모리 솔루션이라 상용 권장 X
+=> 리졸버에서 query, mutation과 동일하게 context를 확인하고
+   auth가 되어있는지 확인
 
 
-> yarn add graphql-subscriptions
-
-import { GraphQLError } from "graphql";
-import { createMessage, getMessages } from "./db/messages.js";
-import { PubSub } from "graphql-subscriptions";
+import { GraphQLError } from 'graphql';
+import { createMessage, getMessages } from './db/messages.js';
+import { PubSub } from 'graphql-subscriptions';
 
 const pubSub = new PubSub();
 
@@ -70,40 +87,31 @@ export const resolvers = {
       if (!user) throw unauthorizedError();
 
       const message = createMessage(user, text);
-      pubSub.publish("MESSAGE_ADDED", { messageAdded: message });
-      // 클라이언트로 메시지 전송
+      pubSub.publish('MESSAGE_ADDED', { messageAdded: message });
 
       return message;
     },
   },
 
-  // 서브스크립션 리졸버 추가
   Subscription: {
     messageAdded: {
-      subscribe: () => pubSub.asyncIterator("MESSAGE_ADDED"),
+      subscribe: (_root, _args, { user }) => {
+        if (!user) throw unauthorizedError();
+        return pubSub.asyncIterator('MESSAGE_ADDED');
+      },
     },
   },
 };
 
 function unauthorizedError() {
-  return new GraphQLError("Not authenticated", {
-    extensions: { code: "UNAUTHORIZED" },
+  return new GraphQLError('Not authenticated', {
+    extensions: { code: 'UNAUTHORIZED' },
   });
 }
 
---------------------------------------------------------
+--------------------------------------------------------s
 
-2. 문서작성 및 호출
+서브스크립션도 auth를 구현하지 않으면 외부에 노출
+웹소켓이 초기화할때 토큰을 전달
 
-문서 작성
-=> query, mutation과 차이없음
-=> opeartion type만 subscription
-
-
-subscription {
-  messageAdded {
-    id
-    user
-    text
-  }
-}
+--------------------------------------------------------s

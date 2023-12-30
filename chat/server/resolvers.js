@@ -1,6 +1,6 @@
-import { GraphQLError } from "graphql";
-import { createMessage, getMessages } from "./db/messages.js";
-import { PubSub } from "graphql-subscriptions";
+import { GraphQLError } from 'graphql';
+import { createMessage, getMessages } from './db/messages.js';
+import { PubSub } from 'graphql-subscriptions';
 
 const pubSub = new PubSub();
 
@@ -17,7 +17,7 @@ export const resolvers = {
       if (!user) throw unauthorizedError();
 
       const message = createMessage(user, text);
-      pubSub.publish("MESSAGE_ADDED", { messageAdded: message });
+      pubSub.publish('MESSAGE_ADDED', { messageAdded: message });
 
       return message;
     },
@@ -25,13 +25,16 @@ export const resolvers = {
 
   Subscription: {
     messageAdded: {
-      subscribe: () => pubSub.asyncIterator("MESSAGE_ADDED"),
+      subscribe: (_root, _args, { user }) => {
+        if (!user) throw unauthorizedError();
+        return pubSub.asyncIterator('MESSAGE_ADDED');
+      },
     },
   },
 };
 
 function unauthorizedError() {
-  return new GraphQLError("Not authenticated", {
-    extensions: { code: "UNAUTHORIZED" },
+  return new GraphQLError('Not authenticated', {
+    extensions: { code: 'UNAUTHORIZED' },
   });
 }
